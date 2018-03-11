@@ -366,6 +366,13 @@ bool build_bytecode(clac_file *cfile) {
         if (generate_file(buffer, header, int_pool, ints, cfile->functionCount, *((uint32_t*)buffer))) {
             fprintf (stderr, "Success.\n");
             printf("%s", header);
+			/* write header to a file
+			 FILE *fp = fopen(NEED FILE PATH, "ab");
+			 if (fp != NULL) {
+			 fputs(header, fp);
+			 fclose(fp);
+			 }
+			 */
         }
         fprintf(stderr, "%s\n",buffer);
     } else {
