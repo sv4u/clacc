@@ -56,11 +56,11 @@ enum instructions {
     IF    = 0x0D,
     PICK  = 0x0E,
     SKIP  = 0x0F,
-    
+
     INT   = 0x10,
     UNK   = 0x11,
     UFUNC = 0x12,
-    
+
     /* Special operands */
     UNUSED       = 0xEE,
     USED         = 0xEF,

@@ -1,6 +1,6 @@
-/*
+/* 
  * Allocation utilities
- *
+ * 
  * Implements versions of malloc and free that abort
  * when allocation fails instead of returning NULL.
  *
@@ -12,19 +12,19 @@
 #define _XALLOC_H_
 
 /* xcalloc(nobj, size) returns a pointer to array of
- * nobj objects, each of size size.
- * Exits if the allocation fails.
- * Like calloc, the array is initialized with zeroes.
+ * nobj objects, each of size size. 
+ * Exits if the allocation fails.  
+ * Like calloc, the array is initialized with zeroes. 
  */
 void* xcalloc(size_t nobj, size_t size)
-/*@ensures \result != NULL; @*/ ;
+  /*@ensures \result != NULL; @*/ ;
 
-/* xmalloc(size) returns a pointer to an object of
+/* xmalloc(size) returns a pointer to an object of 
  * size size.
- * Exits if the allocation fails.
- * Like malloc, no initialization is guaranteed.
+ * Exits if the allocation fails.  
+ * Like malloc, no initialization is guaranteed. 
  */
 void* xmalloc(size_t size)
-/*@ensures \result != NULL; @*/ ;
+  /*@ensures \result != NULL; @*/ ;
 
 #endif

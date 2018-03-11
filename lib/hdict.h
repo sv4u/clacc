@@ -1,6 +1,6 @@
 /*
  * Hash dicts interface
- *
+ * 
  * 15-122 Principles of Imperative Computation */
 
 #include <stdlib.h>
@@ -21,21 +21,21 @@ hdict_t hdict_new(size_t capacity,
                   key_equal_fn *key_equal,
                   key_hash_fn *key_hash,
                   value_free_fn *value_free)
-/*@requires capacity > 0; @*/
-/*@requires elem_equal != NULL && elem_hash != NULL; @*/
-/* if elem_free is NULL, then elements will not be freed */
-/*@ensures \result != NULL; @*/ ;
+  /*@requires capacity > 0; @*/ 
+  /*@requires elem_equal != NULL && elem_hash != NULL; @*/
+  /* if elem_free is NULL, then elements will not be freed */
+  /*@ensures \result != NULL; @*/ ;
 
 /* If insertion removes an existing element from the dict, that
  * removed element will be returned so that the client can free it, if
  * necessary */
 hdict_value hdict_insert(hdict_t H, hdict_key k, hdict_value v)
-/*@requires H != NULL; @*/ ;
+  /*@requires H != NULL; @*/ ;
 
 hdict_value hdict_lookup(hdict_t H, hdict_key x)
-/*@requires H != NULL; @*/ ;
+  /*@requires H != NULL; @*/ ;
 
 void hdict_free(hdict_t H)
-/*@requires H != NULL; @*/ ;
+  /*@requires H != NULL; @*/ ;
 
 #endif

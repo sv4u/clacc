@@ -25,18 +25,18 @@ enum c0_byte_sizes {
     SIF    = 0x0D,
     SPICK  = 0x0E,
     SSKIP  = 0x0F,
-    
+
     SINT   = 3,
     SUNK   = 0x11,
     SUFUNC = 3,
 };
 
-int32_t get_bytecode_size(tok *token, tokenList *functions[]);
+int16_t get_bytecode_size(tok *token);
 /* returns an integer indicating the number of operands a
  * given clac token will translate to
  * */
 
-int32_t get_arg_amount(tokenList *tokens);
+int16_t get_arg_amount(tokenList *tokens);
 /* returns expected number of stack elements used by a function
  * */
 
