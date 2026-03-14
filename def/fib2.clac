@@ -1,9 +1,10 @@
 : comment fib : S, n => S, fib(n) ;
 : noop ;
 : dup 1 pick ;
-: fib dup if fib1 1 skip noop ;
-: fib1 dup 1 - if fib_body 1 skip noop ;
+: fib dup if fib1 else noop ;
+: fib1 dup 1 - if fib_body else noop ;
 : fib_body dup 1 - fib swap 2 - fib + ;
-
- asdkflj askdjf  d a b
-
+0 fib 0 - if quit else noop
+1 fib 1 - if quit else noop
+5 fib 5 - if quit else noop
+10 fib 55 - if quit else noop

@@ -1,8 +1,14 @@
-: comment fib : S, n => S, fib(n) ;
-: comment this uses if in a less obvious way to the same effect... ;
-: comment ... as the fib function in the writeup and fib.clac ;
+: comment fibalt: iterative fibonacci using the shared stack ;
+: comment Stack layout during loop: a b count (count on top) ;
+: dup 1 pick ;
 : noop ;
-: dup 1 pick ; 
-: fib dup if noop noop fib1 ;
-: fib1 dup 1 - if noop noop fib_body ;
-: fib_body dup 1 - fib swap 2 - fib + ;
+: fib_cleanup drop drop ;
+: fib_iter 0 1 rot fib_loop ;
+: fib_loop dup if fib_step else fib_cleanup ;
+: fib_step 1 - rot rot dup rot + rot fib_loop ;
+
+0 fib_iter print
+1 fib_iter print
+5 fib_iter print
+10 fib_iter print
+quit
