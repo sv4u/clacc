@@ -43,8 +43,6 @@ bool operator2int(char *token, tok *parsedToken, hdict_t H) {
         parsedToken->operator = DIV;
     } else if (strcmp(token, "%") == 0) {
         parsedToken->operator = MOD;
-    } else if (strcmp(token, "**") == 0) {
-        parsedToken->operator = POW;
     } else if (strcmp(token, "<") == 0) {
         parsedToken->operator = LT;
     } else if (strcmp(token, "drop") == 0) {
@@ -57,8 +55,8 @@ bool operator2int(char *token, tok *parsedToken, hdict_t H) {
         parsedToken->operator = IF;
     } else if (strcmp(token, "pick") == 0) {
         parsedToken->operator = PICK;
-    } else if (strcmp(token, "skip") == 0) {
-        parsedToken->operator = SKIP;
+    } else if (strcmp(token, "else") == 0) {
+        parsedToken->operator = ELSE;
     } else if (strcmp(token, ":") == 0) {
         parsedToken->operator = USER_DEFINED; // start of function
     } else { // custom function
@@ -215,10 +213,11 @@ bool parse(char *path, clac_file *output) {
         fseek(F, 0, SEEK_END);
         length = ftell(F);
         fseek(F, 0, SEEK_SET);
-        buffer = xmalloc(length);
+        buffer = xmalloc(length + 1);
 
         if (buffer)  {
             fread(buffer, 1, length, F);
+            buffer[length] = '\0';
         }
 
         fclose(F);

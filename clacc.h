@@ -48,14 +48,13 @@ enum instructions {
     MULT  = 0x05,
     DIV   = 0x06,
     MOD   = 0x07,
-    POW   = 0x08,
     LT    = 0x09,
     DROP  = 0x0A,
     SWAP  = 0x5F, /* to match c0vm.h */
     ROT   = 0x0C,
     IF    = 0x0D,
     PICK  = 0x0E,
-    SKIP  = 0x0F,
+    ELSE  = 0x0F,
 
     INT   = 0x10,
     UNK   = 0x11,
@@ -66,5 +65,30 @@ enum instructions {
     USED         = 0xEF,
     USER_DEFINED = 0xFF
 };
+
+/* --- Bytecode buffer for binary code generation --- */
+
+typedef struct {
+    ubyte *data;
+    size_t len;
+    size_t cap;
+} codebuf;
+
+/* --- Integer constant pool --- */
+
+typedef struct {
+    int32_t *values;
+    size_t count;
+    size_t cap;
+} intpool;
+
+/* --- Compilation context --- */
+
+typedef struct {
+    codebuf code;
+    intpool ints;
+    bool uses_print;
+    int num_vars;
+} compile_ctx;
 
 #endif /* _CLACC_H_ */

@@ -1,10 +1,14 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -Werror -Wshadow -std=c99 -pedantic -g -fwrapv
 
-.PHONY: clacc clean
+SOURCES=clacc.c parse.c lib/hdict.c lib/xalloc.c
+
+.PHONY: default clean
+
 default: clacc
-clacc: clacc.c
-	$(CC) $(CFLAGS) -o clacc clacc.c parse.c lib/hdict.c lib/xalloc.c
+
+clacc: $(SOURCES) clacc.h parse.h lib/c0vm.h lib/hdict.h lib/xalloc.h
+	$(CC) $(CFLAGS) -o clacc $(SOURCES)
 
 clean:
-	rm -Rf clacc
+	rm -f clacc *.bc0
