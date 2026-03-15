@@ -4,11 +4,14 @@
 #
 # Usage:
 #   ./tests/run_tests.sh [--runner <path>] [--filter <pattern>] [--verbose]
+#                        [--strip-return-line]
 #
 # Options:
-#   --runner <path>   Path to the bytecode runner (default: tools/c0vm-lite/c0vm-lite)
-#   --filter <pat>    Only run tests whose path matches <pat>
-#   --verbose         Print details for passing tests too
+#   --runner <path>          Path to the bytecode runner (default: tools/c0vm-lite/c0vm-lite)
+#   --filter <pat>           Only run tests whose path matches <pat>
+#   --verbose                Print details for passing tests too
+#   --strip-return-line      Strip the last stdout line before comparison (for
+#                            runners like full c0vm that print the return value)
 #
 # Test file format:
 #   Each .clac test file has a companion .expected file OR embedded directives:
@@ -28,6 +31,7 @@ CLACC="$ROOT_DIR/clacc"
 RUNNER="${ROOT_DIR}/tools/c0vm-lite/c0vm-lite"
 FILTER=""
 VERBOSE=false
+STRIP_RETURN=false
 TMPDIR_BASE=$(mktemp -d)
 
 trap 'rm -rf "$TMPDIR_BASE"' EXIT
@@ -37,6 +41,7 @@ while [[ $# -gt 0 ]]; do
         --runner)  RUNNER="$2"; shift 2 ;;
         --filter)  FILTER="$2"; shift 2 ;;
         --verbose) VERBOSE=true; shift ;;
+        --strip-return-line) STRIP_RETURN=true; shift ;;
         *)         echo "Unknown option: $1"; exit 1 ;;
     esac
 done
@@ -130,6 +135,11 @@ run_test() {
         gtimeout 10 "$RUNNER" "$bc0_file" >"$actual_stdout" 2>"$actual_stderr" || run_rc=$?
     else
         "$RUNNER" "$bc0_file" >"$actual_stdout" 2>"$actual_stderr" || run_rc=$?
+    fi
+
+    if $STRIP_RETURN && [[ $run_rc -eq 0 ]]; then
+        sed '$ d' "$actual_stdout" > "$actual_stdout.tmp"
+        mv "$actual_stdout.tmp" "$actual_stdout"
     fi
 
     case "$expect_type" in

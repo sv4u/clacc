@@ -17,7 +17,7 @@ test: clacc c0vm-lite
 	@./tests/run_tests.sh
 
 test-full: clacc
-	@./tests/run_tests.sh --runner "$${C0VM:-./vendor/c0vm/c0vm}"
+	@./tests/run_tests.sh --runner "$${C0VM:-./vendor/c0vm/c0vm}" --strip-return-line
 
 clean:
 	rm -f clacc *.bc0
