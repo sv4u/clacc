@@ -1,5 +1,7 @@
 # clacc -- clac to C0 bytecode compiler
 
+[![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
+
 `clacc` compiles [clac](SPEC.md), a reverse polish notation (RPN) calculator language from
 Carnegie Mellon's [15-122](https://www.cs.cmu.edu/~15122/) course, to C0 virtual machine
 bytecode (`.bc0`). The output runs on the [C0VM](../c0vm/) interpreter.
@@ -10,9 +12,12 @@ bytecode (`.bc0`). The output runs on the [C0VM](../c0vm/) interpreter.
 make            # build the compiler
 make c0vm-lite  # build the minimal bytecode runner
 make test       # build everything and run the test suite
+make coverage   # generate code coverage report (requires lcov)
+make docs       # generate API documentation (requires Doxygen)
 ```
 
-Requires GCC or Clang with C99 support.
+Requires GCC or Clang with C99 support. See the [Development Guide](docs/DEVELOPMENT.md)
+for platform-specific setup instructions.
 
 ## Usage
 
@@ -160,6 +165,14 @@ C0VM interpreter. The output is a hex-encoded text file with:
 - Function pool (1 function for inline mode, N+1 for heap mode)
 - Native function pool (`printint`, `println`)
 
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [SPEC.md](SPEC.md) | Complete clac language specification |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Compiler internals, pipeline, compilation modes |
+| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Build setup, testing, coverage, and API docs |
+
 ## Language Reference
 
 See [SPEC.md](SPEC.md) for the complete clac language specification, including its origins
@@ -186,12 +199,27 @@ quick local testing and CI. It supports the 24 opcodes that `clacc` emits.
 **Tier 2** uses a full C0VM implementation for rigorous testing and benchmarks. Developers
 who have completed CMU 15-122 can point the test harness at their own `c0vm` binary.
 
+## Code Coverage
+
+Generate a local coverage report (requires [lcov](https://github.com/linux-test-project/lcov)):
+
+```bash
+make coverage
+open coverage-report/index.html
+```
+
+Coverage reports are also generated automatically in CI and uploaded as build artifacts.
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#code-coverage) for details on interpreting
+the report and running full-VM coverage.
+
 ## CI/CD
 
 GitHub Actions runs on every push and pull request:
 
 - **Tier 1 (always)**: Builds `clacc` + `c0vm-lite`, runs the full test suite on
   Ubuntu (GCC, Clang) and macOS. No secrets required.
+- **Coverage**: Builds with `--coverage`, runs tests, uploads an HTML coverage report
+  as a build artifact.
 - **Tier 2 (optional)**: When a `C0VM_DEPLOY_KEY` secret is configured, clones a private
   c0vm repository and runs the test suite with the full VM.
 
@@ -203,7 +231,8 @@ clacc/
 ├── clacc.h              Shared types and data structures
 ├── parse.c              Parser: tokenization, function resolution
 ├── parse.h              Parser interface
-├── Makefile             Build configuration
+├── Makefile             Build, test, coverage, and docs targets
+├── Doxyfile             Doxygen configuration for API docs
 ├── SPEC.md              clac language specification
 ├── lib/
 │   ├── c0vm.h           C0 VM opcodes and bc0 format definitions
@@ -221,5 +250,8 @@ clacc/
 │   ├── edge_cases/      Overflow, comments, boundary tests
 │   └── regression/      Regression tests from example programs
 ├── def/                 Example programs
-└── .github/workflows/   CI/CD pipeline
+├── docs/
+│   ├── ARCHITECTURE.md  Compiler internals and design documentation
+│   └── DEVELOPMENT.md   Development setup, testing, and coverage guide
+└── .github/workflows/   CI/CD pipeline (build, test, coverage)
 ```
