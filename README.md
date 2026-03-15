@@ -7,10 +7,12 @@ bytecode (`.bc0`). The output runs on the [C0VM](../c0vm/) interpreter.
 ## Building
 
 ```bash
-make
+make            # build the compiler
+make c0vm-lite  # build the minimal bytecode runner
+make test       # build everything and run the test suite
 ```
 
-Requires GCC with C99 support.
+Requires GCC or Clang with C99 support.
 
 ## Usage
 
@@ -56,6 +58,17 @@ pushed onto a stack, operators consume from the top and push results back.
 
 ```
 3 4 + 5 *       → (3 + 4) * 5 = 35
+```
+
+### Comments
+
+Line comments start with `//` and extend to the end of the line. The legacy
+`: comment ... ;` convention is also supported.
+
+```
+// This is a comment
+42 print   // inline comment
+: comment traditional clac comment ;
 ```
 
 ### Operations
@@ -150,20 +163,61 @@ C0VM interpreter. The output is a hex-encoded text file with:
 See [SPEC.md](SPEC.md) for the complete clac language specification, including its origins
 in CMU's 15-122 course.
 
+## Testing
+
+The test suite covers arithmetic, stack operations, control flow, user-defined functions,
+error handling, edge cases, and regressions. Tests are defined as `.clac` files with
+companion `.expected` output files or embedded `// TEST:` directives.
+
+```bash
+make test                        # run all tests with c0vm-lite
+make test-full C0VM=/path/to/c0vm  # run with a full c0vm
+./tests/run_tests.sh --verbose   # show individual test results
+./tests/run_tests.sh --filter stack  # run only stack tests
+```
+
+### Test tiers
+
+**Tier 1** uses `c0vm-lite` (a minimal bytecode runner included in the repository) for
+quick local testing and CI. It supports the 24 opcodes that `clacc` emits.
+
+**Tier 2** uses a full C0VM implementation for rigorous testing and benchmarks. Developers
+who have completed CMU 15-122 can point the test harness at their own `c0vm` binary.
+
+## CI/CD
+
+GitHub Actions runs on every push and pull request:
+
+- **Tier 1 (always)**: Builds `clacc` + `c0vm-lite`, runs the full test suite on
+  Ubuntu (GCC, Clang) and macOS. No secrets required.
+- **Tier 2 (optional)**: When a `C0VM_DEPLOY_KEY` secret is configured, clones a private
+  c0vm repository and runs the test suite with the full VM.
+
 ## Project Structure
 
 ```
 clacc/
-├── clacc.c          Compiler: code generation, bc0 output
-├── clacc.h          Shared types and data structures
-├── parse.c          Parser: tokenization, function resolution
-├── parse.h          Parser interface
-├── Makefile         Build configuration
-├── SPEC.md          clac language specification
+├── clacc.c              Compiler: code generation, bc0 output
+├── clacc.h              Shared types and data structures
+├── parse.c              Parser: tokenization, function resolution
+├── parse.h              Parser interface
+├── Makefile             Build configuration
+├── SPEC.md              clac language specification
 ├── lib/
-│   ├── c0vm.h       C0 VM opcodes and bc0 format definitions
-│   ├── hdict.c/h    Hash dictionary (function name lookup)
-│   └── xalloc.c/h   Allocation utilities
-├── def/             Example programs
-└── tests/           Test programs
+│   ├── c0vm.h           C0 VM opcodes and bc0 format definitions
+│   ├── hdict.c/h        Hash dictionary (function name lookup)
+│   └── xalloc.c/h       Allocation utilities
+├── tools/
+│   └── c0vm-lite/       Minimal bytecode runner (24 opcodes)
+├── tests/
+│   ├── run_tests.sh     Test harness
+│   ├── arithmetic/      Arithmetic operator tests
+│   ├── stack/           Stack operation tests
+│   ├── control_flow/    if/else tests
+│   ├── functions/       User-defined function tests
+│   ├── error/           Compile-time and runtime error tests
+│   ├── edge_cases/      Overflow, comments, boundary tests
+│   └── regression/      Regression tests from example programs
+├── def/                 Example programs
+└── .github/workflows/   CI/CD pipeline
 ```

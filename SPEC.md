@@ -37,15 +37,22 @@ Semicolons (`;`) separate function definitions from each other and from the main
 
 ### Comments
 
-clac has no dedicated comment syntax. By convention, comments are written as named
-functions whose bodies contain unrecognized tokens:
+**Line comments** start with `//` and extend to the end of the line:
 
 ```
-: comment this is a comment about the program ;
+// This is a comment
+42 print   // inline comment
 ```
 
-Since the body tokens don't resolve to any known operations or functions, the compiler
-treats the function as inert.
+**Legacy comments** use the `: comment ... ;` convention from the original 15-122
+assignment. A function named `comment` may contain arbitrary tokens without triggering
+an undefined-identifier error:
+
+```
+: comment this function's body is treated as free-form text ;
+```
+
+Both forms are supported. Line comments with `//` are preferred for new code.
 
 ## Data Types
 
@@ -268,12 +275,25 @@ program     ::= (funcdef ";")* main_body
 funcdef     ::= ":" NAME token*
 main_body   ::= token*
 token       ::= INTEGER | OPERATOR | NAME
+comment     ::= "//" (any character except newline)* newline
 INTEGER     ::= "-"? [0-9]+
 OPERATOR    ::= "+" | "-" | "*" | "/" | "%" | "<"
               | "print" | "quit" | "drop" | "swap" | "rot"
               | "if" | "else" | "pick"
 NAME        ::= (non-integer, non-operator identifier)
 ```
+
+## Error Handling
+
+The compiler reports errors and exits with a nonzero code for:
+
+- **Undefined identifiers**: tokens that are not integers, operators, or defined functions
+- **Missing function name**: `:` not followed by a name (e.g., `: ;`)
+- **Numeric function names**: `: 42 ... ;` (function names must not be pure integers)
+- **Nested function definitions**: `: foo : bar ... ; ;`
+- **Incomplete control flow**: `if` or `else` at the end of input without enough tokens
+- **File not found**: source file does not exist
+- **Empty program**: no main body after the last `;`
 
 ## Origins
 
