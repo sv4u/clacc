@@ -106,6 +106,7 @@ All functions share the same data stack. `dup` is not built-in -- define it as `
 | File | Description |
 |------|-------------|
 | `def/demo-print.clac` | Basic stack operations and printing |
+| `def/demo-fail.clac` | Intentional runtime error (print from empty stack) |
 | `tests/math.clac` | Arithmetic, comparison, and stack manipulation |
 | `def/fact.clac` | Recursive factorial with unit tests |
 | `def/fib.clac` | Recursive Fibonacci (definitions only) |
@@ -113,6 +114,7 @@ All functions share the same data stack. `dup` is not built-in -- define it as `
 | `def/fibalt.clac` | Iterative Fibonacci using stack rotation |
 | `def/sum.clac` | Recursive variadic sum |
 | `def/square.clac` | Simple function definitions |
+| `def/brainfuck.clac` | Brainfuck operations experiment (work in progress) |
 
 ## Architecture
 

@@ -22,8 +22,8 @@ hdict_t hdict_new(size_t capacity,
                   key_hash_fn *key_hash,
                   value_free_fn *value_free)
   /*@requires capacity > 0; @*/ 
-  /*@requires elem_equal != NULL && elem_hash != NULL; @*/
-  /* if elem_free is NULL, then elements will not be freed */
+  /*@requires key_equal != NULL && key_hash != NULL; @*/
+  /* if value_free is NULL, then elements will not be freed */
   /*@ensures \result != NULL; @*/ ;
 
 /* If insertion removes an existing element from the dict, that

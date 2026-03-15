@@ -292,8 +292,8 @@ The compiler reports errors and exits with a nonzero code for:
 - **Numeric function names**: `: 42 ... ;` (function names must not be pure integers)
 - **Nested function definitions**: `: foo : bar ... ; ;`
 - **Incomplete control flow**: `if` or `else` at the end of input without enough tokens
+- **Empty function body**: a user-defined function with no tokens (e.g., `: foo ;`)
 - **File not found**: source file does not exist
-- **Empty program**: no main body after the last `;`
 
 ## Origins
 

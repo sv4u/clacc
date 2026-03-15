@@ -1,3 +1,11 @@
+/* clacc.c - Code generation and bytecode output for the clacc compiler.
+ *
+ * Compiles a parsed clac token stream into C0 bytecode (.bc0). Supports
+ * two modes: inline compilation (no recursion) and heap-based stack
+ * compilation (recursive programs). Mode is selected automatically via
+ * DFS cycle detection on the call graph.
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

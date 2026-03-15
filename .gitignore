@@ -2,5 +2,6 @@ clacc
 clacc.log
 *.dSYM/
 *.bc0
+*.swp
 .DS_Store
 tools/c0vm-lite/c0vm-lite

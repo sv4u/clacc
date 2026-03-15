@@ -1,3 +1,11 @@
+/* parse.c - Parser for the clacc compiler.
+ *
+ * Reads a .clac source file, strips line comments, splits by semicolons
+ * into function segments, tokenizes each segment, and resolves
+ * user-defined function references. Produces a clac_file structure
+ * consumed by the code generator (clacc.c).
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

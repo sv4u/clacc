@@ -9,9 +9,9 @@
 #include "clacc.h"
 
 bool parse(char *path, clac_file *output);
-/* Parses a .clac file at null terminated string starting at path,
- * and populates the fields of the clac_file at output.
- * returns true if success, false if fail.
+/* Parses the .clac file at the given file path and populates the
+ * fields of the clac_file at output.
+ * Returns true on success, false on failure.
  */
 
 #endif /* _PARSE_H_ */

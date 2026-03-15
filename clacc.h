@@ -1,3 +1,10 @@
+/* clacc.h - Shared types and data structures for the clacc compiler.
+ *
+ * Defines token representation, parse tree nodes, the bytecode buffer,
+ * integer constant pool, and compilation context used by both the
+ * parser (parse.c) and code generator (clacc.c).
+ */
+
 #ifndef _CLACC_H_
 #define _CLACC_H_
 
@@ -20,10 +27,6 @@ typedef struct stringNode tokenList;
 struct stringNode {
     struct stringNode *next;
     tok *token;
-    char *c0_bytecode;
-    int32_t byteCount;
-    bool compiledYet;
-    int32_t args;
 };
 
 typedef struct node list;
