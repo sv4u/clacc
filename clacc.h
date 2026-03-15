@@ -31,6 +31,7 @@ struct node {
     struct node *next;
     tokenList *tokens;
     char *raw;
+    char *name;
 };
 
 typedef struct clac_file_header clac_file;
@@ -89,6 +90,7 @@ typedef struct {
     intpool ints;
     bool uses_print;
     int num_vars;
+    bool has_error;
 } compile_ctx;
 
 #endif /* _CLACC_H_ */

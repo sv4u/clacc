@@ -87,23 +87,18 @@ static bool is_main_body(clac_file *cfile, int func_index) {
     return func_index == cfile->functionCount;
 }
 
-/* Returns true if the function is a comment (body contains UNK tokens)
- * or is otherwise not a valid user-defined function. */
+/* Returns true if the function is a comment (named "comment")
+ * or is otherwise not a compilable user-defined function. */
 static bool is_comment_function(clac_file *cfile, int func_index) {
     if (is_main_body(cfile, func_index)) return true;
     list *cur = cfile->functions->next;
     for (int i = 1; i < func_index && cur; i++) cur = cur->next;
     if (!cur) return true;
+    if (cur->name && strcmp(cur->name, "comment") == 0) return true;
     tokenList *body = cur->tokens;
     if (!body || !body->next) return true;
     tokenList *first = body->next;
     if (first->token->operator != USER_DEFINED) return true;
-    /* Scan entire body for UNK tokens */
-    tokenList *tok = first->next;
-    while (tok) {
-        if (tok->token->operator == UNK) return true;
-        tok = tok->next;
-    }
     return false;
 }
 
@@ -327,6 +322,7 @@ static tokenList *compile_n_tokens(compile_ctx *ctx, tokenList *start,
             tokenList *tok1 = cur->next;
             if (!tok1) {
                 fprintf(stderr, "Error: 'if' at end of input\n");
+                ctx->has_error = true;
                 return NULL;
             }
 
@@ -336,11 +332,13 @@ static tokenList *compile_n_tokens(compile_ctx *ctx, tokenList *start,
             emit_i16_be(&ctx->code, 0);
 
             tokenList *after_then = compile_n_tokens(ctx, tok1, 1, cfile);
+            if (ctx->has_error) return NULL;
 
             if (after_then && after_then->token->operator == ELSE) {
                 tokenList *else_body = after_then->next;
                 if (!else_body) {
                     fprintf(stderr, "Error: 'else' at end of input\n");
+                    ctx->has_error = true;
                     return NULL;
                 }
 
@@ -431,6 +429,7 @@ static tokenList *compile_n_tokens(compile_ctx *ctx, tokenList *start,
             int32_t n = cur->token->i;
             if (n < 1) {
                 fprintf(stderr, "Error: pick index must be >= 1\n");
+                ctx->has_error = true;
                 return NULL;
             }
             emit_pick(ctx, n);
@@ -444,11 +443,14 @@ static tokenList *compile_n_tokens(compile_ctx *ctx, tokenList *start,
             fprintf(stderr,
                     "Error: runtime 'pick' not supported in inline mode "
                     "(use a literal argument, e.g. '1 pick')\n");
+            ctx->has_error = true;
             return NULL;
         }
 
-        if (!compile_simple_token(ctx, cur->token))
+        if (!compile_simple_token(ctx, cur->token)) {
+            ctx->has_error = true;
             return NULL;
+        }
 
         cur = cur->next;
         compiled++;
@@ -683,6 +685,7 @@ static tokenList *compile_heap_n_tokens(compile_ctx *ctx, tokenList *start,
             tokenList *tok1 = cur->next;
             if (!tok1) {
                 fprintf(stderr, "Error: 'if' at end of input\n");
+                ctx->has_error = true;
                 return NULL;
             }
 
@@ -694,11 +697,13 @@ static tokenList *compile_heap_n_tokens(compile_ctx *ctx, tokenList *start,
 
             tokenList *after_then =
                 compile_heap_n_tokens(ctx, tok1, 1, cfile, func_map);
+            if (ctx->has_error) return NULL;
 
             if (after_then && after_then->token->operator == ELSE) {
                 tokenList *else_body = after_then->next;
                 if (!else_body) {
                     fprintf(stderr, "Error: 'else' at end of input\n");
+                    ctx->has_error = true;
                     return NULL;
                 }
 
@@ -712,6 +717,7 @@ static tokenList *compile_heap_n_tokens(compile_ctx *ctx, tokenList *start,
 
                 tokenList *after_else =
                     compile_heap_n_tokens(ctx, else_body, 1, cfile, func_map);
+                if (ctx->has_error) return NULL;
 
                 size_t endp = codebuf_pos(&ctx->code);
                 patch_i16_be(&ctx->code, goto_p,
@@ -730,6 +736,8 @@ static tokenList *compile_heap_n_tokens(compile_ctx *ctx, tokenList *start,
                     tokenList *after_second =
                         compile_heap_n_tokens(ctx, after_then, 1, cfile,
                                               func_map);
+                    if (ctx->has_error) return NULL;
+
                     size_t end_pos = codebuf_pos(&ctx->code);
                     patch_i16_be(&ctx->code, if_patch,
                                  (int16_t)(end_pos - (if_patch - 1)));
@@ -782,8 +790,10 @@ static tokenList *compile_heap_n_tokens(compile_ctx *ctx, tokenList *start,
             continue;
         }
 
-        if (!compile_heap_simple(ctx, cur->token, func_map))
+        if (!compile_heap_simple(ctx, cur->token, func_map)) {
+            ctx->has_error = true;
             return NULL;
+        }
         cur = cur->next;
         compiled++;
     }
@@ -826,10 +836,16 @@ static bool build_heap_mode(clac_file *cfile, char *output_path) {
         fctx.ints = shared_ints;
         fctx.uses_print = false;
         fctx.num_vars = HEAP_TEMP_BASE;
+        fctx.has_error = false;
 
         tokenList *body = get_function_body(cfile, i);
         if (body) {
             compile_heap_n_tokens(&fctx, body, -1, cfile, func_map);
+        }
+        if (fctx.has_error) {
+            fprintf(stderr, "Compilation failed in function %d\n", i);
+            free(func_map); free(funcs);
+            return false;
         }
 
         /* Return updated sp */
@@ -849,6 +865,7 @@ static bool build_heap_mode(clac_file *cfile, char *output_path) {
     mctx.ints = shared_ints;
     mctx.uses_print = false;
     mctx.num_vars = HEAP_TEMP_BASE;
+    mctx.has_error = false;
 
     /* Setup: allocate heap stack array */
     size_t sz_idx = intpool_add(&mctx.ints, HEAP_STACK_SIZE);
@@ -865,6 +882,11 @@ static bool build_heap_mode(clac_file *cfile, char *output_path) {
     if (main_body) main_body = main_body->next;
     if (main_body) {
         compile_heap_n_tokens(&mctx, main_body, -1, cfile, func_map);
+    }
+    if (mctx.has_error) {
+        fprintf(stderr, "Compilation failed in main body\n");
+        free(func_map); free(funcs);
+        return false;
     }
 
     if (mctx.code.len == 0 ||
@@ -1059,10 +1081,16 @@ int main(int argc, char **argv) {
     intpool_init(&ctx.ints);
     ctx.uses_print = false;
     ctx.num_vars = 0;
+    ctx.has_error = false;
 
     /* Compile directly from the token list; UFUNC calls are recursively
      * compiled at each call site (no separate inlining pass). */
     compile_n_tokens(&ctx, main_body->next, -1, &cfile);
+
+    if (ctx.has_error) {
+        fprintf(stderr, "Compilation failed\n");
+        return 1;
+    }
 
     /* Emit RETURN at end of main if the last instruction wasn't already one */
     if (ctx.code.len == 0 ||
