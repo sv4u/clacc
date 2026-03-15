@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  # Tier 1: Always runs. Builds clacc + c0vm-lite, runs full test suite.
+  # No secrets required -- works on forks and external PRs.
+  build-and-test:
+    name: Build & Test (Tier 1)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        cc: [gcc]
+        include:
+          - os: ubuntu-latest
+            cc: clang
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build clacc
+        run: make CC=${{ matrix.cc }}
+
+      - name: Build c0vm-lite
+        run: make c0vm-lite
+
+      - name: Run test suite
+        run: make test
+
+  # Tier 2: Rigorous testing with full c0vm.
+  # Only runs when the C0VM_DEPLOY_KEY secret is available (main repo only).
+  test-full:
+    name: Test (Tier 2 - Full c0vm)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      HAS_C0VM_KEY: ${{ secrets.C0VM_DEPLOY_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for c0vm access
+        id: check
+        run: |
+          if [[ "$HAS_C0VM_KEY" != "true" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Tier 2 -- C0VM_DEPLOY_KEY secret not configured"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure SSH for c0vm submodule
+        if: steps.check.outputs.skip != 'true'
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.C0VM_DEPLOY_KEY }}
+
+      - name: Clone c0vm
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          git clone git@github.com:${{ secrets.C0VM_REPO || 'your-username/c0vm-private' }}.git vendor/c0vm
+
+      - name: Build clacc
+        if: steps.check.outputs.skip != 'true'
+        run: make
+
+      - name: Build c0vm
+        if: steps.check.outputs.skip != 'true'
+        run: make -C vendor/c0vm C0VM_MINIMAL=1
+
+      - name: Run full test suite
+        if: steps.check.outputs.skip != 'true'
+        run: make test-full C0VM=vendor/c0vm/c0vm
