@@ -1,4 +1,6 @@
-/* clacc.h - Shared types and data structures for the clacc compiler.
+/**
+ * @file clacc.h
+ * @brief Shared types and data structures for the clacc compiler.
  *
  * Defines token representation, parse tree nodes, the bytecode buffer,
  * integer constant pool, and compilation context used by both the
@@ -17,33 +19,64 @@
 
 typedef uint8_t ubyte;
 
+/**
+ * @brief A single parsed token from the clac source.
+ *
+ * Each token carries an instruction tag (@c operator), an optional integer
+ * payload (@c i), and a pointer to the original source text (@c raw).
+ */
 typedef struct tok {
-    int32_t i;
-    ubyte operator;
-    char *raw;
+    int32_t i;       /**< Integer value (for INT tokens) or function index (for UFUNC). */
+    ubyte operator;  /**< Instruction tag from the @ref instructions enum. */
+    char *raw;       /**< Original source text of this token (not owned). */
 } tok;
 
+/**
+ * @brief Singly-linked list of tokens within a function body or main body.
+ *
+ * The first node is a sentinel; actual tokens begin at @c next.
+ */
 typedef struct stringNode tokenList;
 struct stringNode {
-    struct stringNode *next;
-    tok *token;
+    struct stringNode *next;  /**< Next token in the list, or NULL. */
+    tok *token;               /**< Parsed token at this position. */
 };
 
+/**
+ * @brief Singly-linked list of function segments from the parsed source.
+ *
+ * Each node represents one semicolon-delimited segment. The first node
+ * is a sentinel; actual segments begin at @c next.
+ */
 typedef struct node list;
 struct node {
-    struct node *next;
-    tokenList *tokens;
-    char *raw;
-    char *name;
+    struct node *next;       /**< Next segment, or NULL. */
+    tokenList *tokens;       /**< Token list for this segment (sentinel-headed). */
+    char *raw;               /**< Raw source text of the segment (not owned). */
+    char *name;              /**< Function name if this is a definition, else NULL. */
 };
 
+/**
+ * @brief Top-level representation of a parsed clac program.
+ *
+ * Produced by parse() and consumed by the code generator in clacc.c.
+ */
 typedef struct clac_file_header clac_file;
 struct clac_file_header {
-    list *functions;
-    tokenList *mainFunction;
-    int functionCount;
+    list *functions;           /**< Sentinel-headed list of function segments. */
+    tokenList *mainFunction;   /**< Token list for the main body (last segment). */
+    int functionCount;         /**< Total number of semicolon-delimited segments. */
 };
 
+/**
+ * @brief Internal instruction tags assigned during tokenization.
+ *
+ * Values 0x01--0x0F correspond to built-in clac operators. INT (0x10)
+ * marks integer literals, UNK (0x11) marks unresolved identifiers,
+ * UFUNC (0x12) marks resolved user-defined function calls, and
+ * USER_DEFINED (0xFF) marks the @c : token that begins a function
+ * definition.
+ */
 enum instructions {
     PRINT = 0x01,
     QUIT  = 0x02,
@@ -70,31 +103,45 @@ enum instructions {
     USER_DEFINED = 0xFF
 };
 
-/* --- Bytecode buffer for binary code generation --- */
-
+/**
+ * @brief Growable buffer for emitting C0 VM bytecode.
+ *
+ * Starts at 256 bytes and doubles on overflow. Managed by the
+ * codebuf_init / emit / emit_i16_be helpers in clacc.c.
+ */
 typedef struct {
-    ubyte *data;
-    size_t len;
-    size_t cap;
+    ubyte *data;   /**< Heap-allocated bytecode bytes. */
+    size_t len;    /**< Number of bytes currently written. */
+    size_t cap;    /**< Allocated capacity in bytes. */
 } codebuf;
 
-/* --- Integer constant pool --- */
-
+/**
+ * @brief Pool of 32-bit integer constants referenced by ILDC instructions.
+ *
+ * Duplicates are coalesced: intpool_add returns the existing index if
+ * the value is already present.
+ */
 typedef struct {
-    int32_t *values;
-    size_t count;
-    size_t cap;
+    int32_t *values;  /**< Heap-allocated array of constant values. */
+    size_t count;     /**< Number of constants currently stored. */
+    size_t cap;       /**< Allocated capacity (number of int32_t slots). */
 } intpool;
 
-/* --- Compilation context --- */
-
+/**
+ * @brief Mutable state threaded through the compilation pass.
+ *
+ * One compile_ctx is used per compiled function (or for the entire
+ * program in inline mode). It accumulates bytecode, tracks which
+ * features the program uses, and records the high-water mark for
+ * local variable slots.
+ */
 typedef struct {
-    codebuf code;
-    intpool ints;
-    bool uses_print;
-    int num_vars;
-    bool has_error;
-    bool is_main_body;
+    codebuf code;        /**< Bytecode buffer for this function / program. */
+    intpool ints;        /**< Shared integer constant pool. */
+    bool uses_print;     /**< True if any print token was compiled. */
+    int num_vars;        /**< High-water mark for VLOAD/VSTORE indices. */
+    bool has_error;      /**< Set to true on any compilation error. */
+    bool is_main_body;   /**< True when compiling the main entry function. */
 } compile_ctx;
 
 #endif /* _CLACC_H_ */

@@ -1,15 +1,17 @@
-/* Debugging with contracts; simulating cc0 -d
- * Enable with gcc -DDEBUG ...
+/**
+ * @file contracts.h
+ * @brief Debug contract macros simulating cc0 -d behavior.
  *
- * 15-122 Principles of Imperative Computation */
+ * Provides ASSERT, REQUIRES, and ENSURES macros that expand to
+ * assert() when compiled with @c -DDEBUG, or to no-ops otherwise.
+ * Adapted from the 15-122 Principles of Imperative Computation course.
+ *
+ * @note This header may be included multiple times (with and without
+ *       DEBUG defined) because it undefines and redefines its macros
+ *       on each inclusion.
+ */
 
 #include <assert.h>
-
-/* Unlike typical header files, "contracts.h" may be
- * included multiple times, with and without DEBUG defined.
- * For this to succeed we first undefine the macros in
- * question in order to avoid a redefinition warning.
- */
 
 #ifdef ASSERT
 #undef ASSERT
@@ -25,8 +27,11 @@
 
 #ifdef DEBUG
 
+/** @brief Assert a general invariant (active only in debug builds). */
 #define ASSERT(COND) assert(COND)
+/** @brief Assert a function precondition (active only in debug builds). */
 #define REQUIRES(COND) assert(COND)
+/** @brief Assert a function postcondition (active only in debug builds). */
 #define ENSURES(COND) assert(COND)
 
 #else
