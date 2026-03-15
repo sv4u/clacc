@@ -5,3 +5,13 @@ clacc.log
 *.swp
 .DS_Store
 tools/c0vm-lite/c0vm-lite
+
+# Coverage artifacts
+*.gcno
+*.gcda
+coverage.info
+coverage-filtered.info
+coverage-report/
+
+# Doxygen output
+docs/html/
