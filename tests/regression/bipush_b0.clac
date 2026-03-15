@@ -1,0 +1,5 @@
+// TEST: expect_output -80
+// Regression: value -80 (0xB0) matches the RETURN opcode byte.
+// A naive last-byte check would skip emitting the trailing RETURN,
+// causing the VM to execute past the code buffer.
+-80 print

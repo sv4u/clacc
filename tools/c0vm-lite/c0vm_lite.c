@@ -530,17 +530,18 @@ static int execute(bc0_file *bc) {
 
             func_info *target = &bc->functions[fi];
 
-            /* Save current frame */
+            /* Pop arguments from caller BEFORE saving the frame.
+             * S is a value type, so saving after pop ensures the
+             * restored stack won't contain stale argument slots. */
+            c0val args[256];
+            for (int i = target->num_args - 1; i >= 0; i--)
+                args[i] = stack_pop(&S);
+
             call_stack[call_depth].S = S;
             call_stack[call_depth].P = P;
             call_stack[call_depth].pc = pc;
             call_stack[call_depth].V = V;
             call_depth++;
-
-            /* Transfer arguments: pop from caller, push to callee */
-            c0val args[256];
-            for (int i = target->num_args - 1; i >= 0; i--)
-                args[i] = stack_pop(&S);
 
             stack_init(&S);
             V = calloc(target->num_vars, sizeof(c0val));

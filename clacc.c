@@ -897,11 +897,8 @@ static bool build_heap_mode(clac_file *cfile, char *output_path) {
         return false;
     }
 
-    if (mctx.code.len == 0 ||
-        mctx.code.data[mctx.code.len - 1] != RETURN) {
-        emit(&mctx.code, BIPUSH); emit(&mctx.code, 0);
-        emit(&mctx.code, RETURN);
-    }
+    emit(&mctx.code, BIPUSH); emit(&mctx.code, 0);
+    emit(&mctx.code, RETURN);
 
     funcs[0].code = mctx.code;
     funcs[0].num_args = 0;
@@ -1100,13 +1097,12 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    /* Emit RETURN at end of main if the last instruction wasn't already one */
-    if (ctx.code.len == 0 ||
-        ctx.code.data[ctx.code.len - 1] != RETURN) {
-        emit(&ctx.code, BIPUSH);
-        emit(&ctx.code, 0);
-        emit(&ctx.code, RETURN);
-    }
+    /* Always emit trailing RETURN. Checking the last byte is unreliable
+     * because a data operand can equal 0xB0 (e.g. BIPUSH -80). If a
+     * real RETURN already exists (from quit), this is unreachable. */
+    emit(&ctx.code, BIPUSH);
+    emit(&ctx.code, 0);
+    emit(&ctx.code, RETURN);
 
     fprintf(stderr, "Compilation successful: %zu bytes of bytecode\n",
             ctx.code.len);

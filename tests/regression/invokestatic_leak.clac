@@ -1,0 +1,14 @@
+// Regression: heap-mode INVOKESTATIC must pop arguments from the
+// caller's operand stack before saving the frame. Without the fix,
+// each call leaks num_args slots on the caller's stack. This test
+// exercises multiple sequential INVOKESTATIC calls from the main body
+// to verify values aren't corrupted. Stack overflow from the leak
+// would require 500+ calls and is not tested here.
+: dup 1 pick ;
+: noop ;
+: dec 1 - ;
+: fact dup 1 swap < if go else base ;
+: go dup dec fact * ;
+: base drop 1 ;
+5 fact print
+6 fact print
