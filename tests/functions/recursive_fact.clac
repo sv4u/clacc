@@ -1,0 +1,9 @@
+: comment fact: n => fact(n) ;
+: dup 1 pick ;
+: noop ;
+: fact 1 swap fact_ret ;
+: fact_ret dup if fact_body else drop ;
+: fact_body dup rot * swap 1 - fact_ret ;
+5 fact print
+6 fact print
+quit

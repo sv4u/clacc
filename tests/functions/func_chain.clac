@@ -1,0 +1,6 @@
+: dup 1 pick ;
+: square dup * ;
+: cube dup square * ;
+3 cube print
+2 cube print
+quit

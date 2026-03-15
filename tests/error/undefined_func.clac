@@ -1,0 +1,2 @@
+// TEST: expect_compile_error
+5 nonexistent print quit

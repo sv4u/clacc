@@ -1,0 +1,3 @@
+// TEST: expect_compile_error
+: noop ;
+1 if noop else

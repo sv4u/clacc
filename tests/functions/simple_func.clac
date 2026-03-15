@@ -1,0 +1,4 @@
+: double 2 * ;
+5 double print
+3 double print
+quit

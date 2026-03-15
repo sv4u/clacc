@@ -1,0 +1,6 @@
+// false branch: 0 is zero, so skip then-token, execute else-token
+: noop ;
+: print_yes 100 print ;
+: print_no 200 print ;
+0 if print_yes else print_no
+quit

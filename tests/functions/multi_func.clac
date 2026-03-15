@@ -1,0 +1,6 @@
+: comment square: n => n*n ;
+: dup 1 pick ;
+: square dup * ;
+4 square print
+7 square print
+quit

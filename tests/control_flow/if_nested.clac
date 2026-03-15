@@ -1,0 +1,8 @@
+: noop ;
+: inner_true 10 print ;
+: inner_false 20 print ;
+: outer_true 1 if inner_true else inner_false ;
+: outer_false 0 if inner_true else inner_false ;
+1 if outer_true else noop
+0 if noop else outer_false
+quit

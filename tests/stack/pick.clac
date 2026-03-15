@@ -1,0 +1,5 @@
+// 1 pick is dup
+42 1 pick print print
+// 2 pick copies second from top
+10 20 2 pick print print print
+quit

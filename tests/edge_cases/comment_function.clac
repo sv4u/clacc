@@ -1,0 +1,5 @@
+: comment this is a traditional clac comment with arbitrary words ;
+: dup 1 pick ;
+: square dup * ;
+5 square print
+quit

@@ -1,0 +1,13 @@
+: comment fibalt: iterative fibonacci using the shared stack ;
+: comment Stack layout during loop: a b count (count on top) ;
+: dup 1 pick ;
+: noop ;
+: fib_cleanup drop drop ;
+: fib_iter 0 1 rot fib_loop ;
+: fib_loop dup if fib_step else fib_cleanup ;
+: fib_step 1 - rot rot dup rot + rot fib_loop ;
+0 fib_iter print
+1 fib_iter print
+5 fib_iter print
+10 fib_iter print
+quit

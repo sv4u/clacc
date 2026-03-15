@@ -1,0 +1,6 @@
+// true branch: 1 is nonzero, so execute then-token
+: noop ;
+: print_yes 100 print ;
+: print_no 200 print ;
+1 if print_yes else print_no
+quit

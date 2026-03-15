@@ -1,0 +1,2 @@
+// TEST: expect_error
+1 0 / print quit

@@ -1,0 +1,10 @@
+: noop ;
+: report_less 1 print ;
+: report_geq 0 print ;
+// 3 < 5 is true (1)
+3 5 < if report_less else report_geq
+// 5 < 3 is false (0)
+5 3 < if report_less else report_geq
+// 3 < 3 is false (0)
+3 3 < if report_less else report_geq
+quit

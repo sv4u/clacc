@@ -1,0 +1,5 @@
+: skipped 999 print ;
+42 print
+else skipped
+43 print
+quit
