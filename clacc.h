@@ -94,6 +94,7 @@ typedef struct {
     bool uses_print;
     int num_vars;
     bool has_error;
+    bool is_main_body;
 } compile_ctx;
 
 #endif /* _CLACC_H_ */

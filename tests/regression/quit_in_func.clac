@@ -1,0 +1,15 @@
+// Regression: quit inside a user-defined function must terminate
+// the program immediately, not just return to the caller. In heap
+// mode, RETURN only returns to the caller; without the sentinel
+// propagation fix, quit corrupts the heap stack pointer.
+//
+// The recursive `counter` function forces heap mode. `do_quit`
+// calls quit from inside a function. 99 print must never execute.
+: dup 1 pick ;
+: noop ;
+: do_quit quit ;
+: counter dup 0 swap < if go else noop ;
+: go dup 1 - counter drop ;
+42 print
+do_quit
+99 print

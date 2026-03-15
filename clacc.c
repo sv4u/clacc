@@ -374,31 +374,33 @@ static tokenList *compile_n_tokens(compile_ctx *ctx, tokenList *start,
                 cur = after_else;
                 compiled += consumed;
             } else {
-                /* No else: false path skips 2 tokens (tok1 + tok2) */
-                if (after_then) {
+                /* No else: false path skips 2 source tokens. Count how
+                 * many the then-branch actually consumed (INT+PICK eats
+                 * 2 at once). Only compile a second token if needed. */
+                int then_consumed = 0;
+                for (tokenList *t = tok1; t != after_then; t = t->next)
+                    then_consumed++;
+
+                if (then_consumed >= 2 || !after_then) {
+                    size_t end_pos = codebuf_pos(&ctx->code);
+                    patch_i16_be(&ctx->code, if_patch,
+                                 (int16_t)(end_pos - (if_patch - 1)));
+                    cur = after_then;
+                    compiled += 1 + then_consumed;
+                } else {
                     tokenList *after_second =
                         compile_n_tokens(ctx, after_then, 1, cfile);
+                    if (ctx->has_error) return NULL;
 
                     size_t end_pos = codebuf_pos(&ctx->code);
                     patch_i16_be(&ctx->code, if_patch,
                                  (int16_t)(end_pos - (if_patch - 1)));
 
-                    int consumed = 1; /* if */
-                    for (tokenList *t = tok1; t != after_then; t = t->next)
-                        consumed++;
+                    int consumed = 1 + then_consumed;
                     for (tokenList *t = after_then; t != after_second;
                          t = t->next)
                         consumed++;
                     cur = after_second;
-                    compiled += consumed;
-                } else {
-                    size_t end_pos = codebuf_pos(&ctx->code);
-                    patch_i16_be(&ctx->code, if_patch,
-                                 (int16_t)(end_pos - (if_patch - 1)));
-                    int consumed = 1;
-                    for (tokenList *t = tok1; t != NULL; t = t->next)
-                        consumed++;
-                    cur = NULL;
                     compiled += consumed;
                 }
             }
@@ -648,7 +650,12 @@ static bool compile_heap_simple(compile_ctx *ctx, tok *token,
     switch (token->operator) {
     case PRINT: heap_print(ctx); break;
     case QUIT:
-        emit(&ctx->code, BIPUSH); emit(&ctx->code, 0);
+        if (ctx->is_main_body) {
+            emit(&ctx->code, BIPUSH); emit(&ctx->code, 0);
+        } else {
+            /* Return negative sentinel so callers detect quit */
+            emit(&ctx->code, BIPUSH); emit(&ctx->code, (ubyte)(int8_t)-1);
+        }
         emit(&ctx->code, RETURN);
         break;
     case PLUS:  heap_binop(ctx, IADD); break;
@@ -665,12 +672,25 @@ static bool compile_heap_simple(compile_ctx *ctx, tok *token,
     case UFUNC: {
         int clac_idx = token->i;
         int bc0_idx = func_map[clac_idx];
-        if (bc0_idx < 0) break; /* comment/unmapped function → no-op */
+        if (bc0_idx < 0) break;
         emit(&ctx->code, VLOAD);  emit(&ctx->code, HEAP_VAR_ARR);
         emit(&ctx->code, VLOAD);  emit(&ctx->code, HEAP_VAR_SP);
         emit(&ctx->code, INVOKESTATIC);
         emit_i16_be(&ctx->code, (int16_t)bc0_idx);
         emit(&ctx->code, VSTORE); emit(&ctx->code, HEAP_VAR_SP);
+        /* Propagate quit sentinel: if sp < 0, return immediately */
+        emit(&ctx->code, VLOAD);  emit(&ctx->code, HEAP_VAR_SP);
+        emit(&ctx->code, BIPUSH); emit(&ctx->code, 0);
+        emit(&ctx->code, IF_ICMPLT);
+        emit_i16_be(&ctx->code, 6);
+        emit(&ctx->code, GOTO);
+        emit_i16_be(&ctx->code, 6);
+        if (ctx->is_main_body) {
+            emit(&ctx->code, BIPUSH); emit(&ctx->code, 0);
+        } else {
+            emit(&ctx->code, VLOAD);  emit(&ctx->code, HEAP_VAR_SP);
+        }
+        emit(&ctx->code, RETURN);
         break;
     }
     default:
@@ -740,7 +760,17 @@ static tokenList *compile_heap_n_tokens(compile_ctx *ctx, tokenList *start,
                 cur = after_else;
                 compiled += consumed;
             } else {
-                if (after_then) {
+                int then_consumed = 0;
+                for (tokenList *t = tok1; t != after_then; t = t->next)
+                    then_consumed++;
+
+                if (then_consumed >= 2 || !after_then) {
+                    size_t end_pos = codebuf_pos(&ctx->code);
+                    patch_i16_be(&ctx->code, if_patch,
+                                 (int16_t)(end_pos - (if_patch - 1)));
+                    cur = after_then;
+                    compiled += 1 + then_consumed;
+                } else {
                     tokenList *after_second =
                         compile_heap_n_tokens(ctx, after_then, 1, cfile,
                                               func_map);
@@ -750,20 +780,12 @@ static tokenList *compile_heap_n_tokens(compile_ctx *ctx, tokenList *start,
                     patch_i16_be(&ctx->code, if_patch,
                                  (int16_t)(end_pos - (if_patch - 1)));
 
-                    int consumed = 1;
-                    for (tokenList *t = tok1; t != after_then; t = t->next)
-                        consumed++;
+                    int consumed = 1 + then_consumed;
                     for (tokenList *t = after_then; t != after_second;
                          t = t->next)
                         consumed++;
                     cur = after_second;
                     compiled += consumed;
-                } else {
-                    size_t end_pos = codebuf_pos(&ctx->code);
-                    patch_i16_be(&ctx->code, if_patch,
-                                 (int16_t)(end_pos - (if_patch - 1)));
-                    cur = NULL;
-                    compiled += 2;
                 }
             }
             continue;
@@ -845,6 +867,7 @@ static bool build_heap_mode(clac_file *cfile, char *output_path) {
         fctx.uses_print = false;
         fctx.num_vars = HEAP_TEMP_BASE;
         fctx.has_error = false;
+        fctx.is_main_body = false;
 
         tokenList *body = get_function_body(cfile, i);
         if (body) {
@@ -874,6 +897,7 @@ static bool build_heap_mode(clac_file *cfile, char *output_path) {
     mctx.uses_print = false;
     mctx.num_vars = HEAP_TEMP_BASE;
     mctx.has_error = false;
+    mctx.is_main_body = true;
 
     /* Setup: allocate heap stack array */
     size_t sz_idx = intpool_add(&mctx.ints, HEAP_STACK_SIZE);
@@ -1087,6 +1111,7 @@ int main(int argc, char **argv) {
     ctx.uses_print = false;
     ctx.num_vars = 0;
     ctx.has_error = false;
+    ctx.is_main_body = true;
 
     /* Compile directly from the token list; UFUNC calls are recursively
      * compiled at each call site (no separate inlining pass). */
