@@ -61,7 +61,7 @@ jobs:
       - name: Clone c0vm
         if: steps.check.outputs.skip != 'true'
         run: |
-          git clone git@github.com:${{ secrets.C0VM_REPO || 'your-username/c0vm-private' }}.git vendor/c0vm
+          git clone git@github.com:${{ secrets.C0VM_REPO || 'sv4u/c0vm' }}.git vendor/c0vm
 
       - name: Build clacc
         if: steps.check.outputs.skip != 'true'
