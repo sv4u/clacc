@@ -31,6 +31,53 @@ jobs:
       - name: Run test suite
         run: make test
 
+  # Coverage: Builds with --coverage, runs tests, generates lcov report.
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install lcov
+        run: sudo apt-get update && sudo apt-get install -y lcov
+
+      - name: Generate coverage
+        run: make coverage
+
+      - name: Extract coverage percentage
+        id: cov
+        run: |
+          SUMMARY=$(lcov --summary coverage-filtered.info \
+                         --rc branch_coverage=1 \
+                         --ignore-errors deprecated,deprecated 2>&1)
+          LINE_COV=$(echo "$SUMMARY" | grep -oP 'lines\.*:\s*\K[\d.]+')
+          BRANCH_COV=$(echo "$SUMMARY" | grep -oP 'branches\.*:\s*\K[\d.]+')
+          echo "lines=${LINE_COV}%" >> "$GITHUB_OUTPUT"
+          echo "branches=${BRANCH_COV}%" >> "$GITHUB_OUTPUT"
+
+      - name: Coverage summary
+        run: |
+          echo "## Code Coverage" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric   | Coverage |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|----------|----------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Lines    | ${{ steps.cov.outputs.lines }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Branches | ${{ steps.cov.outputs.branches }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Full report available in the **coverage-report** artifact." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-report/
+
+      - name: Upload coverage data
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-data
+          path: coverage-filtered.info
+
   # Tier 2: Rigorous testing with full c0vm.
   # Only runs when the C0VM_DEPLOY_KEY secret is available (main repo only).
   test-full:
