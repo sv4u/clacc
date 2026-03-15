@@ -36,9 +36,9 @@ static void codebuf_grow(codebuf *buf) {
     if (!buf->data) { fprintf(stderr, "Out of memory\n"); exit(1); }
 }
 
-static void emit(codebuf *buf, ubyte byte) {
+static void emit(codebuf *buf, ubyte b) {
     if (buf->len >= buf->cap) codebuf_grow(buf);
-    buf->data[buf->len++] = byte;
+    buf->data[buf->len++] = b;
 }
 
 static void emit_i16_be(codebuf *buf, int16_t val) {
